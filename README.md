@@ -1,10 +1,89 @@
 # active_aggregate
 
  - active_aggregate is a little helper support to queries by mongoDB aggregate more easily.
- - A toolkit for building queries like ActiveRelation. Rich support for more flexible merge conditons, states
+ - A toolkit for building queries like ActiveRelation. Rich support for more flexible merge conditions, states
 
 ## Getting started
 
 ```ruby
 gem install active_aggregate
 ```
+
+## Requirements
+ - mongoid >= 5.0.1
+
+## Usage
+
+```ruby
+# models/user.rb
+class User
+  include Mongoid::Document
+
+  belongs_to :school
+  belongs_to :branch
+
+  scope :active, -> { where(status: :active) }
+  scope :by_status, ->(status) { where(status: status) }
+end
+
+class Query
+  include ActiveAggregate::Concern
+end
+
+class UserQuery < Query
+  define_for User
+
+  # you can use `criteria.active` instead of `User.active`
+  scope :load_active_user_names, criteria: User.active,
+        project: {
+          id: '$_id',
+          name: {
+            '$concat': [
+              '$first_name',
+              ' ',
+              '$last_name',
+            ]
+          }
+        }
+
+  scope :not_deleted, criteria: User.where(deleted_at: nil)
+  scope :load_user_ids,
+        ->(status:, school_id_branch_ids:) do
+          where(status: status).pipeline(
+            '$match': {
+              'school_id_branch_id': {
+                '$in': school_id_branch_ids,
+              }
+            }
+          )
+
+          # it avaiable to use like
+          # query_criteria(User.by_status(status)).pipeline([
+          #   '$match': {
+          #     'school_id_branch_id': {
+          #       '$in': school_id_branch_ids,
+          #     }
+          #   }
+          # ])
+
+        end,
+        project: {
+          id: '$_id',
+          school_id_branch_id: {
+            '$concatArrays': [
+              ['$school_id'],
+              ['$branch_id'],
+            ]
+          }
+        }
+end
+
+UserQuery.not_deleted.load_user_ids.where(:created_at.lt => Time.current)
+```
+
+- `scope` support define for:
+  - criteria: as `Mongoid::Criteria` it will place at first of pipeline if given.
+  - group: as object, .
+  - project: nil.
+  - sort, limit: as object, will be replace throw merge ActiveAggregate::Relation.
+  - pipeline: as Array will place end of pre-pipeline if given, merge with previous pipeline by concat 2 array
