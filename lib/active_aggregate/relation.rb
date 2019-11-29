@@ -80,7 +80,7 @@ class ActiveAggregate::Relation
   def generate_execute_pipeline(select_all: false, aggregate: {})
     merge(aggregate) if aggregate.present?
     [].tap do |execute_pipeline|
-      execute_pipeline << { '$match': @criteria.selector } if @criteria
+      execute_pipeline << { '$match': selector } if selector.present?
       execute_pipeline << { '$group': @group } if @group.present?
       execute_pipeline << { '$sort': @sort } if @sort.present?
       execute_pipeline << { '$project': project_selector } if select_all || @project.present?
@@ -136,6 +136,8 @@ class ActiveAggregate::Relation
     query_criteria(model.in(*args))
   end
 
+  alias_method :where_in, :in
+
   def any_of(*args)
     query_criteria(model.any_of(*args))
   end
@@ -164,7 +166,7 @@ class ActiveAggregate::Relation
 
   private
 
-  def init_default_value(criteria: nil, pipeline: [], group: nil, project: nil, sort: nil, limit: nil)
+  def init_default_value(criteria: model.all, pipeline: [], group: nil, project: nil, sort: nil, limit: nil)
     @criteria = format_criteria(criteria)
     @pipeline = pipeline.present? ? pipeline : []
     @group = group.present? ? group : {}
