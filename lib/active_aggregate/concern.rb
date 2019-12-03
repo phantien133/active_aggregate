@@ -5,7 +5,7 @@ module ActiveAggregate::Concern
     attr_reader :model, :criteria
 
     delegate :query, :query_criteria, :group, :project, :pipeline, :group_by, :to_a,
-             :where, :in, :any_off, :all_of,
+             :where, :in, :where_in, :any_off, :all_of,
              to: :all
 
     def define_for(model)
