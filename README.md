@@ -96,8 +96,14 @@ UserQuery.not_deleted.load_user_ids.where(:created_at.lt => Time.current)
 ```
 
 - `scope` support define for:
-  - criteria: as `Mongoid::Criteria` it will place at first of pipeline if given.
-  - group: as object, .
-  - project: nil.
+  - criteria: as `Mongoid::Criteria` it will place at first of pipeline if given, by default it is default scope
+  - group: as object, can be merge throw all queries.
+  - project: as object, will be replace throw merge ActiveAggregate::Relation
   - sort, limit: as object, will be replace throw merge ActiveAggregate::Relation.
   - pipeline: as Array will place end of pre-pipeline if given, merge with previous pipeline by concat 2 array
+`scope` will generate pipeline to use with aggregate with states order by:
+ - State 1 is `$match` use`criteria` selector if selector present
+ - state 2 is `$group` if `group` given
+ - state 3 is `$project` if `project` given
+ - state 3 is `$limit` if `limit` given
+ - pipeline will be place from here
