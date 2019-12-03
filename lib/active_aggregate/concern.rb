@@ -9,8 +9,8 @@ module ActiveAggregate::Concern
     def scope(name, *options)
       required_model!
       scope_name = name.to_sym
-      scopes[scope_name] = ActiveAggregate::Relation.new(self, *options)
       singleton_class.send(:define_method, scope_name) do |*args|
+        scopes[scope_name] = ActiveAggregate::Relation.new(self, *options)
         return scopes[scope_name].generate(*args)
       end
     end
