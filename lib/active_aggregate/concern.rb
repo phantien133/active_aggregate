@@ -46,11 +46,11 @@ module ActiveAggregate::Concern
     end
 
     def model
-      @model ||= load_model || @model
+      @model ||= load_model
     end
 
     def criteria
-      @criteria ||= load_model || @criteria
+      @criteria ||= load_model.all
     end
 
     private
