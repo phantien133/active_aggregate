@@ -78,6 +78,20 @@ class UserQuery < Query
         }
 end
 
+# another way
+# class Query
+#   include ActiveAggregate::Concern
+
+#   # On children class it will remove [suffix] at end of class name to get model name then you can skip call define_for each all of Query class
+#   # [suffix] have default value is Query
+#   with_suffix
+#   # with_suffix suffix: :Query
+# end
+
+# class UserQuery < Query
+# end
+
+
 UserQuery.not_deleted.load_user_ids.where(:created_at.lt => Time.current)
 ```
 

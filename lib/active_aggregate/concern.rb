@@ -2,19 +2,12 @@ module ActiveAggregate::Concern
   extend ActiveSupport::Concern
 
   class_methods do
-    attr_reader :model, :criteria
-
     delegate :query, :query_criteria, :group, :project, :pipeline, :group_by, :to_a,
-             :where, :in, :any_off, :all_of,
+             :where, :in, :where_in, :any_off, :all_of,
              to: :all
 
-    def define_for(model)
-      @model = model
-      @criteria = model.all
-    end
-
     def scope(name, *options)
-      raise TypeError, 'set defined scope for model first' unless model
+      required_model!
       scope_name = name.to_sym
       scopes[scope_name] = ActiveAggregate::Relation.new(self, *options)
       singleton_class.send(:define_method, scope_name) do |*args|
@@ -23,7 +16,7 @@ module ActiveAggregate::Concern
     end
 
     def all
-      raise TypeError, 'set defined scope for model first' unless model
+      required_model!
       ActiveAggregate::Relation.new(self).generate
     end
 
@@ -50,6 +43,41 @@ module ActiveAggregate::Concern
 
     def scopes
       @scopes ||= {}
+    end
+
+    def model
+      @model ||= load_model || @model
+    end
+
+    def criteria
+      @criteria ||= load_model || @criteria
+    end
+
+    private
+
+    def define_for(model)
+      @criteria = model.all
+      @model = model
+    end
+
+    def with_suffix(suffix: :Query)
+      singleton_class.send(:define_method, :suffix) do
+        suffix
+      end
+    end
+
+    def load_model
+      @model || define_for_model_by_remove_suffix
+    end
+
+    def define_for_model_by_remove_suffix
+      return if !defined?(suffix) || suffix.nil?
+      model_name = name[0..(name.length - suffix.length - 1)]
+      define_for(model_name.constantize)
+    end
+
+    def required_model!
+      raise TypeError, 'set defined scope for model first' unless model
     end
   end
 end
