@@ -3,12 +3,13 @@ module ActiveAggregate::Concern
 
   class_methods do
     delegate :query, :query_criteria, :group, :project, :pipeline, :group_by, :to_a,
-             :where, :in, :where_in, :any_off, :all_of,
+             :where, :in, :where_in, :any_off, :all_of, :limit, :sort,
              to: :all
 
     def scope(name, *options)
       required_model!
       scope_name = name.to_sym
+      scopes[scope_name] = ActiveAggregate::Relation.new(self, *options).tap { |relation| relation.cacheable = false }
       singleton_class.send(:define_method, scope_name) do |*args|
         scopes[scope_name] = ActiveAggregate::Relation.new(self, *options)
         return scopes[scope_name].generate(*args)

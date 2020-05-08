@@ -2,9 +2,11 @@ class ActiveAggregate::Relation
   include ActiveSupport::Concern
 
   attr_reader :scope_class, :body
+  attr_accessor :cacheable
 
   def initialize(scope_class, body = nil, options = {})
     @scope_class = scope_class
+    @cacheable = true
     if body.respond_to?(:call)
       init_default_value(options)
       @body = body
@@ -17,7 +19,7 @@ class ActiveAggregate::Relation
   delegate :selector, to: :criteria
   delegate :count, :first, to: :aggregate
   delegate :select, :find, :last, :group_by, :each_with_object, :each,
-           :map, :reduce, :reject,
+           :map, :reduce, :reject, :to_json,
            to: :to_a
 
   def query(options)
@@ -83,7 +85,7 @@ class ActiveAggregate::Relation
       execute_pipeline << { '$match': selector } if selector.present?
       execute_pipeline << { '$group': @group } if @group.present?
       execute_pipeline << { '$sort': @sort } if @sort.present?
-      execute_pipeline << { '$project': project_selector } if select_all || @project.present?
+      execute_pipeline << { '$project': generate_project } if select_all || @project.present?
       execute_pipeline << { '$limit': @limit } if @limit.present?
       execute_pipeline.push(*@pipeline)
     end
@@ -108,10 +110,11 @@ class ActiveAggregate::Relation
   end
 
   def to_a
-    @as_array ||= aggregate.to_a
+    return @as_array if cacheable && @as_array
+    aggregate.to_a.tap { |array| @as_array ||= array if cacheable }
   end
 
-  alias_method :load, :to_a
+  alias load to_a
 
   def add_pipeline(*stages)
     @pipeline.push(*stages.flatten)
@@ -142,7 +145,19 @@ class ActiveAggregate::Relation
     query_criteria(model.in(*args))
   end
 
-  alias_method :where_in, :in
+  def pluck(*fields)
+    fields = Array.wrap(fields).map(&:to_s)
+    to_a.each_with_object([]) do |doc, result|
+      record = if fields.size == 1
+                 doc[fields.first]
+               else
+                 doc.slice(*fields).values
+               end
+      result << record unless record.nil?
+    end
+  end
+
+  alias where_in in
 
   def any_of(*args)
     query_criteria(model.any_of(*args))
