@@ -72,6 +72,7 @@ class ActiveAggregate::Relation
 
   def generate_project
     return @project if @project.present?
+
     selector.keys.each_with_object({}) { |con, hashes| hashes[con] = "$#{con}" }
   end
 
@@ -85,7 +86,8 @@ class ActiveAggregate::Relation
       execute_pipeline << { '$match': selector } if selector.present?
       execute_pipeline << { '$group': @group } if @group.present?
       execute_pipeline << { '$sort': @sort } if @sort.present?
-      execute_pipeline << { '$project': generate_project } if select_all || @project.present?
+      execute_pipeline << { '$project': generate_project } if select_all ||
+                                                              @project.present?
       execute_pipeline << { '$limit': @limit } if @limit.present?
       execute_pipeline.push(*@pipeline)
     end
@@ -93,6 +95,7 @@ class ActiveAggregate::Relation
 
   def generate(*args)
     return self if body.nil?
+
     result = scope_class.instance_exec(*args, &body)
     case result
     when Hash
@@ -111,6 +114,7 @@ class ActiveAggregate::Relation
 
   def to_a
     return @as_array if cacheable && @as_array
+
     aggregate.to_a.tap { |array| @as_array ||= array if cacheable }
   end
 
@@ -169,7 +173,10 @@ class ActiveAggregate::Relation
 
   def merge(relation)
     if !relation.is_a?(ActiveAggregate::Relation) || relation.scope_class != scope_class
-      raise TypeError, "#relation much be an ActiveAggregate::Relation of #{scope_class}"
+      raise(
+        TypeError,
+        "#relation much be an ActiveAggregate::Relation of #{scope_class}"
+      )
     end
     self.class.new(scope_class, merge_exposed(relation.expose))
   end
@@ -185,7 +192,17 @@ class ActiveAggregate::Relation
     }
   end
 
+  def unscoped
+    dup.tap do |new_relation|
+      new_relation.send(:_unscoped)
+    end
+  end
+
   private
+
+  def _unscoped
+    @criteria = @criteria.unscoped
+  end
 
   def init_default_value(criteria: model.all, pipeline: [], group: nil, project: nil, sort: nil, limit: nil)
     @criteria = format_criteria(criteria)
