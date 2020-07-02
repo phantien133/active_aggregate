@@ -2,18 +2,18 @@
 # frozen_string_literal: true
 
 Gem::Specification.new do |s|
-  s.name = "active_aggregate"
-  s.version = "0.0.3"
-  s.date = "2020-05-08"
-  s.summary = "active_aggregate is a little helper support to queries by mongoDB aggregate more easily."
-  s.description = "A toolkit for building queries like ActiveRelation. Rich support for more flexible merge conditions, states"
-  s.homepage = "https://github.com/phantien133/active_aggregate"
-  s.files = Dir["lib/**/*", "README.md"]
+  s.name = 'active_aggregate'
+  s.version = '0.0.3'
+  s.date = '2020-05-08'
+  s.summary = 'active_aggregate is a little helper support to queries by mongoDB aggregate more easily.'
+  s.description = 'A toolkit for building queries like ActiveRelation. Rich support for more flexible merge conditions, states'
+  s.homepage = 'https://github.com/phantien133/active_aggregate'
+  s.files = Dir['lib/**/*', 'README.md']
 
   s.required_ruby_version = '>= 2.2.3'
-  s.authors = ['Phan Quang Tien']
+  s.authors = ['Phan Tien']
 
-  s.require_paths = ["lib"]
+  s.require_paths = ['lib']
 
-  s.add_dependency("mongoid", ">= 5.0.1")
+  s.add_dependency('mongoid', '>= 5.0.1')
 end
